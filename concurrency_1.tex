@@ -1,0 +1,115 @@
+\documentclass[letterpaper,10pt,draftclsnofoot,onecolumn]{IEEEtran}
+
+\usepackage[margin=0.75in]{geometry}
+
+\def\name{Kaiyuan Fan, Sophia Liu, Trevor Spear}
+\def\team{Team 12-03 }
+\def\assign{Project 1: Getting Acquainted}
+\def\course{CS 444 Spring 2016}
+% Title page information
+\title{\team \assign}
+\author{\name}
+\setlength{\parindent}{0pt}
+\begin{document}
+\maketitle
+\vspace*{10em}
+\centering
+\course
+\vspace*{4em}
+\begin{abstract} 
+This document outlines our process in getting acquainted with kernel development. It also describes our solution to the
+producer-consumer concurrency exercise. We used the Yocto project to build our custom kernel and relied on QEMU to provide a virtual environment in which to run our kernel.
+\end{abstract}
+
+\clearpage
+\begin{flushleft}
+\section{Log of Commands to Build and Run our Kernel}
+\begin{enumerate}
+	\item mkdir /scratch/spring2017/cs444-014
+	\item cd /scratch/spring2017/cs444-014
+	\item git clone git://git.yoctoproject.org/linux-yocto-3.14
+	\item cd linux-yocto-3.14
+	\item git checkout tags/v3.14.26
+	\item source /scratch/opt/environment-setup-i586-poky-linux.csh
+	\item cp /scratch/spring2017/files/config-3.14.26-yocto-qemu.config
+	\item make menuconfig
+	\item LOCALVERSION
+	\item -12-03-hw1
+	\item make -j4
+	\item cd /scratch/spring2017/12-03
+	\item cp /scratch/spring2017/files/bzImage-qemux86.bin ./bzImage-qemux86.bin
+	\item /scratch/spring2017/files/core-image-lsb-sdk-qemux86.ext3 .
+	\item qemu-system- i386 -gdb tcp::5623 -S -nographic - kernel linux-yocto- 
+		3.14/arch/x86/boot/bzImage  -drive file=core-image- lsb-sdk- qemux86.ext3,
+		if=virtio -enable- kvm-net none -usb -localtime -- no-reboot -- append
+		"root=/dev/vda rw console=ttyS0 debug"
+	\item target remote :5623
+	\item continue
+	\item ??-12-03-hw1 -a
+\end{enumerate}
+
+\section{Concurrency Solution} 
+Our concurrency solution begins with a producer thread producing random numbers into the buffer. We use the RDRAND instruction for generating the random number, however if this does not work on the machine, we set up an implementation of the Mersenne Twister. In this program, we use the version of the Mersenne Twister from the course website that includes improved initialization. We are solving this concurrency problem by using the mutex in Pthreads. Producer and consumer threads share the same buffer, these two threads lock the mutex when accessing buffer to protect it. After processing, we wake up the other thread and release the buffer. We also use the pthreadcondwait function to block producer thread when the buffer is full, or block the consumer thread when buffer is empty so there is no deadlock.
+
+\section{Flags listed in the qemu command-line}
+\begin{enumerate}
+	\item gdb tcp:5623 -Tells qemu to setup the remote gdv server on our given port and protocol
+	\item s  - Prevents the CPU from running at startup
+	\item nographic - Disables graphical output so that our qemu is a command-line application
+	\item kernel - Indicates the kernel image to be loaded
+	\item drive file=, if= -Defines the disk image to use with the drive. The if defines the interface the drive should be connected to
+	\item enable-kvm -Enables support for a full KVM (Kernel-based Virtual Machine) virtualization
+	\item net: none - Indicates that no network devices should be configured.
+	\item usb -Enables the USB driver
+	\item localtime -Stores the system time as the local time
+	\item no-reboot -This exits the system instead of rebooting.
+	\item appends -This flag adds extra options to the kernel command line.
+\end{enumerate}
+
+\section{Concurrency Questions}
+\subsection{What do you think the main point of this assignment is?}
+	The main points of this assignment are to review concepts from Operating Systems One, and begin working with concurrency problems. We did a lot of research for this first assignment, using both materials from the class website, operating systems one, and other sources; while frustrating at times, we have more knowledge of different online resources for concurrency programming. We also felt that we learned more by implementing code ourselves rather than being hand held through the process. This assignment also required us to review the fundamentals of Operating Systems programming, such as working with threads and synchronization constructs, as well as x86 ASM instructions. Finally, this was the start of our work with concurrency problems, allowing us to hone our abilities to think in parallel.
+
+\subsection{How did you personally approach the problem?} 
+	We began by going through the resources listed on the class page to see what we could learn from it. Then, we looked through the program requirements and started writing down pseudocode to use as an outline for our workflow. Finally, we approached the rdrand vs. Mersenne Twister problem by researching how to implement x86 ASM instructions in C and again reviewing the provided rdrand and Mersenne Twister files from the class website.
+
+\subsection{ How did you ensure your solution was correct?} 
+	Our testing plan involved running the program for varying amounts of time( these times were 1, 5, and 10 minutes) to see if any segmentation faults occurred or the program stopped running. This was helpful because it allowed us to fix some errors that caused segmentation faults. After fixing these bugs, the program continued running for each time frame from our test plan. Next, our test plan included checking the output for various amounts of consumers. We successfully implemented this aspect of the assignment, as our tests gave correct output for differing amounts of consumers. Finally, we tested the Mersenne and rdrand requirements by using os-class (to test the Mersenne Twister code) and a laptop that supports rdrand.
+
+\subsection{ What did you learn?} 
+When we started our concurrency exercise, we were familiar with programming in assembly, however we had not written much C code that made use of ASM; we learned how to do this by reviewing class materials,researching various sources online, and through trial-and-error. Furthermore, the concurrency portion of the assignment allowed us to practice thinking in parallel as we worked to make the producer and consumer threads run simultaneously without stopping on each others operations. We had to think about debugging differently than we were used to since considering both the scheduler and how each thread was completing its tasks at the same time proved to be a challenge. This assignment also taught us how to integrate x86 ASM into C, and implement a concurrency
+solution by thinking in parallel. Our takeaway from this assignment is that we have a deeper understanding of x86 assembly code, and concurrency programming.
+
+\section{Work Log Table/Version Control}
+
+\begin{center}
+	\begin{tabular}{||c c c||}
+	\hline \hline
+	04/12/2017 & Kaiyuan and Trevor & Built Kernel in recitation \\
+	\hline
+		04/14/2017 & Kaiyuan, Sophia, and Trevor & Started layout for Project 1 \\
+	\hline
+		04/15/2017 & Kaiyuan, Sophia, and Trevor & Assigned Roles \\
+	\hline
+		04/15/2017 & Sophia & Created Latex Template \\
+	\hline
+		04/16/2017 & Sophia & Added Title Page and list of commands \\
+	\hline
+		04/18/2017 & Kaiyuan & Finished layout of RandomNumberGenerator and Mersenne Twister \\
+	\hline
+		04/18/2017 & Trevor & Finished making the struct and layout to Consumer and Producer \\
+	\hline
+		04/19/2017 & Trevor & Finished main, Consumer, Producer \\
+	\hline
+		04/19/2017 & Kaiyuan & Finished rdrand and RandomNumberGenerator \\
+	\hline
+04/20/2017 & Sophia & Answered the concurrency questions, added qemu flag explanations \\
+	\hline
+		04/20/2017 & Kaiyuan & Edited the Concurrency Explanation\\
+	\hline
+
+\end{tabular}
+\end{center}
+\clearpage
+\end{flushleft}
+\end{document}
